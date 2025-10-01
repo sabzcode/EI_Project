@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mars Rover Simulator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        input, textarea, button { margin: 5px 0; padding: 8px; width: 300px; }
+        label { font-weight: bold; display: block; margin-top: 10px; }
+        #result { margin-top: 20px; padding: 10px; border: 1px solid #ccc; width: 320px; }
+    </style>
+</head>
+<body>
+<h2>Mars Rover Simulator</h2>
+
+<label>Grid Size (width,height)</label>
+<input id="gridSize" type="text" placeholder="10,10" />
+
+<label>Start Position (x,y,direction)</label>
+<input id="startPosition" type="text" placeholder="0,0,N" />
+
+<label>Obstacles (list of x,y)</label>
+<textarea id="obstacles" placeholder="2,2&#10;3,5"></textarea>
+
+<label>Commands (M,L,R)</label>
+<input id="commands" type="text" placeholder="M,M,R,M,L,M" />
+
+<button onclick="sendCommands()">Run Rover</button>
+
+<div id="result"></div>
+
+<script>
+    async function sendCommands() {
+        const gridSize = document.getElementById('gridSize').value.split(',').map(Number);
+        const start = document.getElementById('startPosition').value.split(',');
+        const obstaclesText = document.getElementById('obstacles').value.trim().split('\n');
+        const obstacles = obstaclesText.map(line => line.split(',').map(Number));
+        const commands = document.getElementById('commands').value.split(',').map(c => c.trim());
+
+        const payload = {
+            gridWidth: gridSize[0],
+            gridHeight: gridSize[1],
+            startX: parseInt(start[0]),
+            startY: parseInt(start[1]),
+            startDirection: start[2].toUpperCase(),
+            obstacles: obstacles,
+            commands: commands
+        };
+
+        try {
+            const response = await fetch('http://localhost:8080/commands', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+            document.getElementById('result').innerHTML =
+                `<b>Final Position:</b> (${data.finalX}, ${data.finalY}, ${data.finalDirection})<br>
+                 <b>Status:</b> ${data.status}`;
+        } catch (err) {
+            document.getElementById('result').innerText = "Error: " + err.message;
+        }
+    }
+</script>
+</body>
+</html>
